@@ -19,20 +19,23 @@ enum FillNAMethodKnownValues {
 @knownValues(FillNAMethodKnownValues)
 model FillNAMethod is string;
 
-enum DetectionStatus {
+enum MultivariateBatchDetectionStatus {
   Created: "CREATED",
   Running: "RUNNING",
   Ready: "READY",
   Failed: "FAILED",
 }
 
-@doc("Data schema of input data source: OneTable or MultiTable. The default DataSchema is OneTable.")
-enum DataSchema {
+enum DataSchemaValues {
   @doc("OneTable means that your input data are all in one CSV file, which contains one 'timestamp' column and several variable columns. The default DataSchema is OneTable.")
   "OneTable",
   @doc("MultiTable means that your input data are separated in multiple CSV files, in each file containing one 'timestamp' column and one 'variable' column, and the CSV file name should indicate the name of the variable. The default DataSchema is OneTable.")
   "MultiTable",
 }
+
+@doc("Data schema of input data source: OneTable or MultiTable. The default DataSchema is OneTable.")
+@knownValues(DataSchemaValues)
+model DataSchema is string;
 
 enum AlignMode {
   "Inner",
@@ -48,23 +51,23 @@ enum ModelStatus {
 
 @doc("Detection results for the given resultId.")
 @resource("multivariate/detect-batch")
-model DetectionResult {
+model MultivariateDetectionResult {
   @doc("Result identifier, which is used to fetch the results of an inference call.")
   @key
   @format("uuid")
   resultId: string;
 
   @doc("Multivariate anomaly detection status.")
-  summary: DetectionResultSummary;
+  summary: MultivariateBatchDetectionResultSummary;
 
   @doc("Detection result for each timestamp.")
   results: AnomalyState[];
 }
 
 @doc("Multivariate anomaly detection status.")
-model DetectionResultSummary {
+model MultivariateBatchDetectionResultSummary {
   @doc("Status of detection results. One of CREATED, RUNNING, READY, and FAILED.")
-  status: DetectionStatus;
+  status: MultivariateBatchDetectionStatus;
 
   @doc("Error message when detection is failed.")
   errors?: ErrorResponse[];
@@ -75,7 +78,7 @@ model DetectionResultSummary {
 Detection request for batch inference. This is an asynchronous inference which
 will need another API to get detection results.
 """)
-  setupInfo: DetectionRequest;
+  setupInfo: MultivariateBatchDetectionOptions;
 }
 
 @doc("ErrorResponse contains code and message that shows the error information.")
@@ -113,7 +116,7 @@ model VariableState {
 Detection request for batch inference. This is an asynchronous inference which
 will need another API to get detection results.
 """)
-model DetectionRequest {
+model MultivariateBatchDetectionOptions {
   @doc("""
 Source link to the input data to indicate an accessible Azure storage Uri,
 either pointed to an Azure blob storage folder, or pointed to a CSV file in
@@ -246,6 +249,7 @@ detect whether the timestamp is anomaly or not.
   @doc("Model status. One of CREATED, RUNNING, READY, and FAILED.")
   status?: ModelStatus;
 
+  @visibility("read")
   @doc("Error messages when failed to create a model.")
   errors?: ErrorResponse[];
 
@@ -305,7 +309,7 @@ epoch.
 
 @doc("Response of getting a model.")
 @resource("multivariate/models")
-model Model {
+model AnomalyDetectionModel {
   @doc("Model identifier.")
   @key
   @format("uuid")
@@ -329,7 +333,7 @@ information.
 model ModelList {
   @doc("List of models.")
   @items
-  models: Model[];
+  models: AnomalyDetectionModel[];
 
   @doc("Number of trained multivariate models.")
   currentCount: int32;
@@ -343,7 +347,7 @@ model ModelList {
 }
 
 @doc("Request of last detection.")
-model LastDetectionRequest {
+model MultivariateLastDetectionOptions {
   @doc("""
 This contains the inference data, including the name, timestamps(ISO 8601) and
 values of variables.
@@ -370,9 +374,9 @@ model VariableValues {
   values: float32[];
 }
 
+
 @doc("Results of last detection.")
-model LastDetectionResult {
-  @doc("Variable Status.")
+model MultivariateLastDetectionResult {
   variableStates?: VariableState[];
   @doc("Anomaly status and information.")
   results?: AnomalyState[];
